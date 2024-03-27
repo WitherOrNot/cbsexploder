@@ -139,7 +139,9 @@ int wmain(int argc, LPCWSTR* argv)
     if (ProcessOptions(argc, argv)) {
         return 1;
     }
-
+    
+    WCHAR fullLogPath[MAX_PATH];
+    ASRT_NL(GetFullPathNameW(g_options.logPath, MAX_PATH, fullLogPath, NULL), "ERROR: Log path %s is invalid", g_options.logPath);
     SetEnvironmentVariableW(L"COMPONENT_BASED_SERVICING_LOGFILE", g_options.logPath);
 
     CHK_NL_HR(CoInitialize(NULL), "ERROR: CoInitialize Failed [HR = %08x]");
@@ -174,7 +176,7 @@ int wmain(int argc, LPCWSTR* argv)
     LDBG("Initialized CBS Session (bootDrive = \"%s\", winDir = \"%s\")", bootDrive, winDir);
 
     WCHAR fullPkgPath[MAX_PATH];
-    GetFullPathNameW(g_options.pkgPath, MAX_PATH, fullPkgPath, NULL);
+    ASRT_NL(GetFullPathNameW(g_options.pkgPath, MAX_PATH, fullPkgPath, NULL), "Package path %s is invalid", g_options.pkgPath);
 
     ComPtr<ICbsPackage> pkg;
     CHK_HR(cbsSess->CreatePackage(0, CbsPackageType::ExpandedWithMum, fullPkgPath, NULL, &pkg), "ERROR: Failed to create package (pkgPath = \"%s\") [HR = %08x]", fullPkgPath);
