@@ -5,6 +5,8 @@
 #include <Shlwapi.h>
 #include <stdio.h>
 
+#pragma comment(lib, "shlwapi.lib")
+
 using Microsoft::WRL::ComPtr;
 
 OPTIONS g_options;
