@@ -6,4 +6,15 @@
 
 #include <windows.h>
 
-extern BOOL g_Debug;
+typedef struct _OPTIONS {
+	BOOL debug = FALSE;
+	BOOL localStack = FALSE;
+	BOOL noAct = FALSE;
+	LPCWSTR batchPath = NULL;
+	LPCWSTR pkgPath = NULL;
+	LPCWSTR logPath = L"C:\\cbsexploder.log";
+	LPCWSTR winDir = NULL;
+	CbsInstallState intendedPkgState = CbsInstallState::Unknown;
+} OPTIONS;
+
+extern OPTIONS g_options;

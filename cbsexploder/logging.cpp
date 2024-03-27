@@ -28,10 +28,8 @@ HRESULT WdsLog(WdsLogSource source, WdsLogLevel level, LPCSTR fmt, ...) {
 	HRESULT result;
 
 	va_start(va_args, fmt);
-
-	if (g_Debug) {
-		VConLog(fmt, va_args);
-	}
+	
+	VConLog(fmt, va_args);
 
 	LPVOID partMsg = ConstructPartialMsgVW(level, fmt, va_args);
 	result = WdsSetupLogMessageW(partMsg, source, L"D", 0, 1, __FILEW__, __FUNCTIONW__, CurrentIP(), 0, NULL, 0);
