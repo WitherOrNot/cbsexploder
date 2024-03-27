@@ -2,6 +2,7 @@
 #include "options.h"
 #include "logging.h"
 #include <wrl/client.h>
+#include <Shlwapi.h>
 #include <stdio.h>
 
 using Microsoft::WRL::ComPtr;
@@ -161,7 +162,7 @@ int wmain(int argc, LPCWSTR* argv)
     WCHAR bootDrive[MAX_PATH] = { 0 };
     LPCWSTR winDir = g_options.winDir;
 
-    LPCWSTR winPart = wcsstr(winDir, L"Windows");
+    LPCWSTR winPart = StrStrIW(winDir, L"Windows");
     ASRT(winPart, "ERROR: Invalid offline Windows directory %s", winDir);
 
     ULONG64 bootLen = winPart - winDir;
