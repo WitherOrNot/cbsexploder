@@ -60,6 +60,5 @@ HRESULT UIHandler::ProgressEx(CbsInstallState state, UINT cur, UINT total, UINT 
 }
 
 HRESULT UIHandler::Terminate() {
-	ConLog("\nOperations finished, waiting for cleanup...");
 	return S_OK;
 }
