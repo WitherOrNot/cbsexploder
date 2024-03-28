@@ -31,7 +31,7 @@ HRESULT UIHandler::Initiate(IEnumCbsUpdate* updates, int* pUnk) {
 }
 
 HRESULT UIHandler::Error(HRESULT hr, PCWSTR str, int* pUnk) {
-	ConLog("ERROR: %s [HR = %08x]", str, hr);
+	ConLog(" ERROR: %s [HR = %08x]", str, hr);
 	return S_OK;
 }
 
