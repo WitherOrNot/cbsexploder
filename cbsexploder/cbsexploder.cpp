@@ -1,6 +1,4 @@
-#include "CbsApi.h"
-#include "options.h"
-#include "logging.h"
+#include "uihandler.h"
 #include <wrl/client.h>
 #include <Shlwapi.h>
 #include <stdio.h>
@@ -52,14 +50,11 @@ int LoadWds() {
     return 0;
 }
 
-int ProcessOptions(int argc, LPCWSTR* argv) {
+int ProcessOptions(int argc, LPCWSTR* argv, BOOL isCmdline) {
     for (int i = 0; i < argc; i++) {
         LPCWSTR arg = argv[i];
-
-        if (!wcsncmp(arg, L"/dbg", 4)) {
-            g_options.debug = TRUE;
-        }
-        else if (!wcsncmp(arg, L"/sp", 3)) {
+        
+        if (!wcsncmp(arg, L"/sp", 3)) {
             ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Multiple package operations specified");
             g_options.intendedPkgState = CbsInstallState::Staged;
         }
@@ -71,73 +66,98 @@ int ProcessOptions(int argc, LPCWSTR* argv) {
             ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Multiple package operations specified");
             g_options.intendedPkgState = CbsInstallState::Absent;
         }
-        else if (!wcsncmp(arg, L"/ep", 3)) {
-            ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Option /ep is incompatible with package operations");
-            g_options.noAct = TRUE;
-        }
-        else if (!wcsncmp(arg, L"/o", 2)) {
-            LPCWSTR val = wcschr(arg, L':');
-            ASRT_NL(val, "ERROR: Invalid argument %s", arg);
-            g_options.winDir = val + 1;
-        }
         else if (!wcsncmp(arg, L"/m", 2)) {
             LPCWSTR val = wcschr(arg, L':');
             ASRT_NL(val, "ERROR: Invalid argument %s", arg);
             g_options.pkgPath = val + 1;
         }
-        else if (!wcsncmp(arg, L"/log", 4)) {
-            LPCWSTR val = wcschr(arg, L':');
-            ASRT_NL(val, "ERROR: Invalid argument %s", arg);
-            g_options.logPath = val + 1;
-        }
-        else if (!wcsncmp(arg, L"/ls", 3)) {
-            g_options.localStack = TRUE;
+
+        if (isCmdline) {
+            if (!wcsncmp(arg, L"/ep", 3)) {
+                g_options.enumPkgs = TRUE;
+            }
+            else if (!wcsncmp(arg, L"/dbg", 4)) {
+                g_options.debug = TRUE;
+            }
+            else if (!wcsncmp(arg, L"/o", 2)) {
+                LPCWSTR val = wcschr(arg, L':');
+                ASRT_NL(val, "ERROR: Invalid argument %s", arg);
+                g_options.winDir = val + 1;
+            }
+            else if (!wcsncmp(arg, L"/log", 4)) {
+                LPCWSTR val = wcschr(arg, L':');
+                ASRT_NL(val, "ERROR: Invalid argument %s", arg);
+                g_options.logPath = val + 1;
+            }
+            else if (!wcsncmp(arg, L"/b", 2)) {
+                LPCWSTR val = wcschr(arg, L':');
+                ASRT_NL(val, "ERROR: Invalid argument %s", arg);
+                g_options.batchPath = val + 1;
+            }
+            else if (!wcsncmp(arg, L"/?", 2)) {
+                g_options.help = TRUE;
+            }
         }
     }
 
     ASRT_NL(g_options.winDir, "ERROR: No offline Windows directory path specified");
-    ASRT_NL(g_options.intendedPkgState != CbsInstallState::Unknown, "ERROR: No package operation specified");
-    ASRT_NL(g_options.pkgPath, "ERROR: No package path specified");
+
+    if (!g_options.batchPath) {
+        if (!g_options.enumPkgs) {
+            ASRT_NL(g_options.intendedPkgState != CbsInstallState::Unknown, "ERROR: No package operation specified");
+            ASRT_NL(g_options.pkgPath, "ERROR: No package path specified");
+        }
+    }
+    else {
+        ASRT_NL(!g_options.enumPkgs, "ERROR: Batch file cannot be used with /ep")
+
+        if (isCmdline) {
+            ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Batch file cannot be used with /sp, /ip, or /up");
+            ASRT_NL(!g_options.pkgPath, "ERROR: Batch file cannot be used with /m option");
+        }
+    }
 
     return 0;
 }
 
-LPCWSTR PkgStateAsStr(CbsInstallState state) {
-    switch (state) {
-        case CbsInstallState::Absent:
-            return L"Uninstalled";
-            break;
-        case CbsInstallState::Installed:
-            return L"Installed";
-            break;
-        case CbsInstallState::PartiallyInstalled:
-            return L"Partially Installed";
-            break;
-        case CbsInstallState::Staged:
-            return L"Staged";
-            break;
-        case CbsInstallState::Invalid:
-            return L"Invalid";
-            break;
-        case CbsInstallState::Invalid_Installed:
-            return L"Invalid Installed";
-            break;
-        case CbsInstallState::Invalid_Staged:
-            return L"Invalid Staged";
-            break;
-        case CbsInstallState::Unknown:
-        default:
-            return L"Unknown";
-            break;
-    }
+void PrintUsage(LPCWSTR exename) {
+    wprintf(
+        L"\n"
+        "Usage: %s /<mode> /m:<path> /o:<path> [/b:<path>] [/dbg] [/?]\n"
+        "\nModes:\n"
+        "/sp\tStage package\n"
+        "/ip\tInstall package\n"
+        "/up\tUninstall package\n"
+        "/ep\tEnumerate installed packages (overrides other arguments)\n"
+        "\nSession arguments:\n"
+        "/m\tManifest path for package\n"
+        "/o\tOffline image Windows directory path\n"
+        "\nOptional:\n"
+        "/dbg\tEnable debug mode (more verbose output and logging)\n"
+        "/?\tPrint this usage guide"
+        "/b\tUse batch file\n"
+        "\nBatch file:\n"
+        "/b argument cannot be used with /sp, /ip, /up, /ep, or /m.\n"
+        "Each line in batch file represents one package operation, in the same format as the above arguments.\n\n"
+        "Example batch file:\n"
+        "/ip /m:C:\\pkg1.mum\n"
+        "/sp /m:C:\\pkg2.mum\n",
+        exename
+    );
 }
 
 int wmain(int argc, LPCWSTR* argv)
 {
-    printf("cbsexploder 0.0.1 by witherornot\n");
+    printf("cbsexploder 0.0.2 by witherornot\n");
 
-    if (ProcessOptions(argc, argv)) {
+    if (ProcessOptions(argc, argv, TRUE)) {
+        PrintUsage(argv[0]);
         return 1;
+    }
+
+    if (g_options.help) {
+        PrintUsage(argv[0]);
+        return 0;
     }
     
     WCHAR fullLogPath[MAX_PATH];
@@ -174,32 +194,103 @@ int wmain(int argc, LPCWSTR* argv)
 
     CHK_HR(cbsSess->Initialize(CbsSessionOption::None, L"CbsExploder", bootDrive, winDir), "ERROR: Failed to initialize CBS Session (bootDrive = \"%s\", winDir = \"%s\") [HR = %08x]", bootDrive, winDir);
     LDBG("Initialized CBS Session (bootDrive = \"%s\", winDir = \"%s\")", bootDrive, winDir);
-
-    WCHAR fullPkgPath[MAX_PATH];
-    ASRT_NL(GetFullPathNameW(g_options.pkgPath, MAX_PATH, fullPkgPath, NULL), "Package path %s is invalid", g_options.pkgPath);
-
-    ComPtr<ICbsPackage> pkg;
-    CHK_HR(cbsSess->CreatePackage(0, CbsPackageType::ExpandedWithMum, fullPkgPath, NULL, &pkg), "ERROR: Failed to create package (pkgPath = \"%s\") [HR = %08x]", fullPkgPath);
-
-    LPWSTR pkgIdent;
-    pkg->GetProperty(CbsPackageProperty::IdentityString, &pkgIdent);
-
-    LDBG("Loaded package %s", pkgIdent);
-
-    CbsInstallState curState, appState;
-    CHK_HR(pkg->EvaluateApplicability(0, &appState, &curState), "ERROR: Failed to evaluate applicability for %s [HR = %08x]", pkgIdent);
     
-    LPCWSTR curStateStr = PkgStateAsStr(curState);
-    LPCWSTR intendStateStr = PkgStateAsStr(g_options.intendedPkgState);
+    if (g_options.enumPkgs) {
+        ComPtr<IEnumCbsIdentity> pkgEnum;
+        CHK_HR(cbsSess->EnumeratePackages(0x50, &pkgEnum), "ERROR: Failed to enumerate packages");
 
-    LDBG("Package current state: %s", curStateStr);
+        UINT pbFetched = 1;
+        ComPtr<ICbsIdentity> pkgIdent;
 
-    ASRT(curState != g_options.intendedPkgState, "ERROR: Package %s is already %s", pkgIdent, curStateStr);
-    ASRT(appState == CbsInstallState::Installed, "ERROR: Package %s is not applicable to the current image", pkgIdent);
+        while (pbFetched) {
+            HRESULT result = pkgEnum->Next(1, &pkgIdent, &pbFetched);
 
-    LOG("Setting package %s as %s", pkgIdent, intendStateStr);
+            if (SUCCEEDED(result) && pbFetched) {
+                PWSTR identName;
+                pkgIdent->GetStringId(&identName);
+                ConLog("%s", identName);
+            }
+        }
 
-    pkg->InitiateChanges(0, CbsInstallState::Installed, NULL);
+        return 0;
+    }
+
+    FILE* batchFile = NULL;
+
+    if (g_options.batchPath) {
+        _wfopen_s(&batchFile, g_options.batchPath, L"r");
+        ASRT(batchFile, "ERROR: Failed to open batch file %s", g_options.batchPath);
+    }
+
+    while (1) {
+        if (batchFile) {
+            WCHAR line[2048] = { 0 };
+            fgetws(line, 2048, batchFile);
+
+            if (!wcslen(line)) {
+                break;
+            }
+
+            LPWSTR* bargv = (LPWSTR*)malloc(8 * sizeof(LPWSTR));
+            int bargc = 0;
+
+            WCHAR* tokCtx = NULL;
+            WCHAR* token = NULL;
+            LPCWSTR delims = L" \t\n";
+
+            token = wcstok_s(line, delims, &tokCtx);
+            while (token) {
+                bargv[bargc] = (WCHAR*)malloc((wcslen(token) + 1) * sizeof(WCHAR*));
+                ASRT(bargv[bargc], "ERROR: Failed to allocate batch file argument");
+                memset(bargv[bargc], 0, (wcslen(token) + 1) * sizeof(WCHAR*));
+                memcpy(bargv[bargc], token, sizeof(WCHAR) * wcslen(token));
+                bargc += 1;
+
+                token = wcstok_s(NULL, delims, &tokCtx);
+            }
+
+            if (ProcessOptions(bargc, (LPCWSTR*)bargv, FALSE)) {
+                return 1;
+            }
+
+            for (int i = 0; i < bargc; i++) free(bargv[i]);
+            free(bargv);
+        }
+
+        WCHAR fullPkgPath[MAX_PATH];
+        ASRT_NL(GetFullPathNameW(g_options.pkgPath, MAX_PATH, fullPkgPath, NULL), "Package path %s is invalid", g_options.pkgPath);
+
+        ComPtr<ICbsPackage> pkg;
+        CHK_HR(cbsSess->CreatePackage(0, CbsPackageType::ExpandedWithMum, fullPkgPath, NULL, &pkg), "ERROR: Failed to create package (pkgPath = \"%s\") [HR = %08x]", fullPkgPath)
+
+        LPWSTR pkgIdent;
+        pkg->GetProperty(CbsPackageProperty::IdentityString, &pkgIdent);
+
+        LDBG("Loaded package %s", pkgIdent);
+
+        CbsInstallState curState, appState;
+        CHK_HR(pkg->EvaluateApplicability(0, &appState, &curState), "ERROR: Failed to evaluate applicability for %s [HR = %08x]", pkgIdent);
+
+        LPCWSTR curStateStr = PkgStateAsStr(curState);
+        LPCWSTR intendStateStr = PkgStateAsStr(g_options.intendedPkgState);
+
+        LDBG("Package current state: %s", curStateStr);
+
+        ASRT(curState != g_options.intendedPkgState, "ERROR: Package %s is already %s", pkgIdent, curStateStr);
+        ASRT(appState == CbsInstallState::Installed, "ERROR: Package %s is not applicable to the current image", pkgIdent);
+
+        LOG("Setting package %s as %s", pkgIdent, intendStateStr);
+
+        const ComPtr<UIHandler> pHandler = new UIHandler();
+        pkg->InitiateChanges(0, g_options.intendedPkgState, pHandler.Get());
+
+        if (!batchFile) {
+            break;
+        }
+        else {
+            g_options.intendedPkgState = CbsInstallState::Unknown;
+        }
+    }
 
     CbsRequiredAction reqAct;
     CHK_HR(cbsSess->FinalizeEx(0, &reqAct), "ERROR: Failed to finalize CBS session [HR = %08x]");

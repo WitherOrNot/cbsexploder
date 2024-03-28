@@ -9,7 +9,8 @@
 typedef struct _OPTIONS {
 	BOOL debug = FALSE;
 	BOOL localStack = FALSE;
-	BOOL noAct = FALSE;
+	BOOL enumPkgs = FALSE;
+	BOOL help = FALSE;
 	LPCWSTR batchPath = NULL;
 	LPCWSTR pkgPath = NULL;
 	LPCWSTR logPath = L"C:\\cbsexploder.log";

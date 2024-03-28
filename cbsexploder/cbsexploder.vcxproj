@@ -142,11 +142,13 @@
   <ItemGroup>
     <ClCompile Include="cbsexploder.cpp" />
     <ClCompile Include="logging.cpp" />
+    <ClCompile Include="uihandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CbsApi.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="options.h" />
+    <ClInclude Include="uihandler.h" />
     <ClInclude Include="wcp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

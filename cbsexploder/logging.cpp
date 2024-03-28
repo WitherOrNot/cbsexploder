@@ -37,3 +37,69 @@ HRESULT WdsLog(WdsLogSource source, WdsLogLevel level, LPCSTR fmt, ...) {
 	va_end(va_args);
 	return result;
 }
+
+LPCWSTR PkgStateAsStr(CbsInstallState state) {
+    switch (state) {
+        case CbsInstallState::Absent:
+            return L"Uninstalled";
+        case CbsInstallState::UninstallRequested:
+            return L"Uninstall Requested";
+        case CbsInstallState::Installed:
+            return L"Installed";
+        case CbsInstallState::PartiallyInstalled:
+            return L"Partially Installed";
+        case CbsInstallState::InstallRequested:
+            return L"Install Requested";
+        case CbsInstallState::Staging:
+            return L"Staging";
+        case CbsInstallState::Resolved:
+            return L"Resolved";
+        case CbsInstallState::Resolving:
+            return L"Resolving";
+        case CbsInstallState::Staged:
+            return L"Staged";
+        case CbsInstallState::Superseded:
+            return L"Superseded";
+        case CbsInstallState::Permanent:
+            return L"Permanent";
+        case CbsInstallState::Invalid_Permanent:
+            return L"Invalid Permanent";
+        case CbsInstallState::Cancel:
+            return L"Cancel";
+        case CbsInstallState::Default:
+            return L"Default";
+        case CbsInstallState::Invalid:
+            return L"Invalid";
+        case CbsInstallState::Invalid_Installed:
+            return L"Invalid Installed";
+        case CbsInstallState::Invalid_Staged:
+            return L"Invalid Staged";
+        case CbsInstallState::Unknown:
+        default:
+            return L"Unknown";
+    }
+}
+
+LPCWSTR CbsOpStageAsStr(CbsOperationStage stage) {
+    switch (stage) {
+        case CbsOperationStage::Waiting:
+            return L"Waiting";
+        case CbsOperationStage::Planning:
+            return L"Planning";
+        case CbsOperationStage::Downloading:
+            return L"Downloading";
+        case CbsOperationStage::Extracting:
+            return L"Extracting";
+        case CbsOperationStage::Resolving:
+            return L"Extracting";
+        case CbsOperationStage::Staging:
+            return L"Staging";
+        case CbsOperationStage::Installing:
+        case CbsOperationStage::InstallingEx:
+            return L"Installing";
+        case CbsOperationStage::ReservicingLCU:
+            return L"Reservicing LCU";
+        default:
+            return L"Unknown";
+    }
+}

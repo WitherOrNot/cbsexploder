@@ -15,3 +15,5 @@
 
 HRESULT WdsLog(WdsLogSource source, WdsLogLevel level, LPCSTR fmt, ...);
 void ConLog(LPCSTR fmt, ...);
+LPCWSTR PkgStateAsStr(CbsInstallState state);
+LPCWSTR CbsOpStageAsStr(CbsOperationStage stage);
