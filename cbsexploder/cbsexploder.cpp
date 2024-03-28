@@ -18,6 +18,7 @@ PCONSTRUCT_PARTIAL_MSG_VW ConstructPartialMsgVW;
 PCURRENT_IP CurrentIP;
 
 IMalloc* g_alloc;
+FILE* g_batchFile = NULL;
 
 int __stdcall Ret1(int x) { return 1; }
 void Nop() { }
@@ -120,6 +121,42 @@ int ProcessOptions(int argc, LPCWSTR* argv, BOOL isCmdline) {
     return 0;
 }
 
+int ProcessNextBatchArgs() {
+    WCHAR line[2048] = { 0 };
+    fgetws(line, 2048, g_batchFile);
+
+    if (!wcslen(line)) {
+        return -1;
+    }
+
+    int bargc = 0;
+    LPWSTR* bargv = (LPWSTR*)malloc(8 * sizeof(LPWSTR));
+    ASRT(bargv, "ERROR: Failed to allocate batch file arguments");
+
+    WCHAR* tokCtx = NULL;
+    WCHAR* token = NULL;
+    LPCWSTR delims = L" \t\n";
+
+    token = wcstok_s(line, delims, &tokCtx);
+    while (token) {
+        bargv[bargc] = (WCHAR*)malloc((wcslen(token) + 1) * sizeof(WCHAR*));
+        ASRT(bargv[bargc], "ERROR: Failed to allocate batch file argument");
+        memset(bargv[bargc], 0, (wcslen(token) + 1) * sizeof(WCHAR*));
+        memcpy(bargv[bargc], token, sizeof(WCHAR) * wcslen(token));
+        bargc += 1;
+
+        token = wcstok_s(NULL, delims, &tokCtx);
+    }
+
+    if (ProcessOptions(bargc, (LPCWSTR*)bargv, FALSE)) {
+        return 1;
+    }
+
+    free(bargv);
+
+    return 0;
+}
+
 void PrintUsage(LPCWSTR exename) {
     wprintf(
         L"\n"
@@ -215,46 +252,20 @@ int wmain(int argc, LPCWSTR* argv)
         return 0;
     }
 
-    FILE* batchFile = NULL;
-
     if (g_options.batchPath) {
-        _wfopen_s(&batchFile, g_options.batchPath, L"r");
-        ASRT(batchFile, "ERROR: Failed to open batch file %s", g_options.batchPath);
+        _wfopen_s(&g_batchFile, g_options.batchPath, L"r");
+        ASRT(g_batchFile, "ERROR: Failed to open batch file %s", g_options.batchPath);
     }
 
     while (1) {
-        if (batchFile) {
-            WCHAR line[2048] = { 0 };
-            fgetws(line, 2048, batchFile);
-
-            if (!wcslen(line)) {
+        if (g_batchFile) {
+            int res = ProcessNextBatchArgs();
+            if (res == -1) {
                 break;
             }
-
-            LPWSTR* bargv = (LPWSTR*)malloc(8 * sizeof(LPWSTR));
-            int bargc = 0;
-
-            WCHAR* tokCtx = NULL;
-            WCHAR* token = NULL;
-            LPCWSTR delims = L" \t\n";
-
-            token = wcstok_s(line, delims, &tokCtx);
-            while (token) {
-                bargv[bargc] = (WCHAR*)malloc((wcslen(token) + 1) * sizeof(WCHAR*));
-                ASRT(bargv[bargc], "ERROR: Failed to allocate batch file argument");
-                memset(bargv[bargc], 0, (wcslen(token) + 1) * sizeof(WCHAR*));
-                memcpy(bargv[bargc], token, sizeof(WCHAR) * wcslen(token));
-                bargc += 1;
-
-                token = wcstok_s(NULL, delims, &tokCtx);
-            }
-
-            if (ProcessOptions(bargc, (LPCWSTR*)bargv, FALSE)) {
+            else if (res) {
                 return 1;
             }
-
-            for (int i = 0; i < bargc; i++) free(bargv[i]);
-            free(bargv);
         }
 
         WCHAR fullPkgPath[MAX_PATH];
@@ -284,7 +295,7 @@ int wmain(int argc, LPCWSTR* argv)
         const ComPtr<UIHandler> pHandler = new UIHandler();
         pkg->InitiateChanges(0, g_options.intendedPkgState, pHandler.Get());
 
-        if (!batchFile) {
+        if (!g_batchFile) {
             break;
         }
         else {
