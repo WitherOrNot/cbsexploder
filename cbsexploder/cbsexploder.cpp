@@ -134,7 +134,7 @@ void PrintUsage(LPCWSTR exename) {
         "/o\tOffline image Windows directory path\n"
         "\nOptional:\n"
         "/dbg\tEnable debug mode (more verbose output and logging)\n"
-        "/?\tPrint this usage guide"
+        "/?\tPrint this usage guide\n"
         "/b\tUse batch file\n"
         "\nBatch file:\n"
         "/b argument cannot be used with /sp, /ip, /up, /ep, or /m.\n"
