@@ -160,7 +160,7 @@ int ProcessNextBatchArgs() {
 void PrintUsage(LPCWSTR exename) {
     wprintf(
         L"\n"
-        "Usage: %s /<mode> /m:<path> /o:<path> [/b:<path>] [/dbg] [/?]\n"
+        "Usage: %s /<mode> /m:<path> /o:<path> [/log:<path>] [/dbg] [/?] [/b:<path>]\n"
         "\nModes:\n"
         "/sp\tStage package\n"
         "/ip\tInstall package\n"
@@ -170,6 +170,7 @@ void PrintUsage(LPCWSTR exename) {
         "/m\tManifest path for package\n"
         "/o\tOffline image Windows directory path\n"
         "\nOptional:\n"
+        "/log\tSet log path (default: C:\\cbsexploder.log)\n"
         "/dbg\tEnable debug mode (more verbose output and logging)\n"
         "/?\tPrint this usage guide\n"
         "/b\tUse batch file\n"
@@ -303,9 +304,13 @@ int wmain(int argc, LPCWSTR* argv)
             g_options.intendedPkgState = CbsInstallState::Unknown;
         }
     }
+    
+    printf("\n");
 
     CbsRequiredAction reqAct;
-    CHK_HR(cbsSess->FinalizeEx(0, &reqAct), "ERROR: Failed to finalize CBS session [HR = %08x]");
+    CHK_HR(cbsSess->FinalizeEx(0, &reqAct), "\nERROR: Failed to finalize CBS session [HR = %08x]\nCheck log file for details.");
+
+    LOG("\nSuccessfully finalized CBS session");
 
     if (reqAct == CbsRequiredAction::Reboot) {
         LOG("CBS has indicated that a reboot is required");
