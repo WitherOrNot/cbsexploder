@@ -2,6 +2,8 @@
 
 Implementation of a CBS client for offline servicing. Capable of installing packages to a foundation image built with [sxsfounder](https://github.com/WitherOrNot/sxsfounder).
 
+> DISCLAIMER: Do not attempt to use this codebase for online servicing. This codebase contains minimal error handling and no recovery features. Any and all damages incurred through use of this software are indication of a skill issue, rip bozo.
+
 ## Usage
 
 Requires servicing stack DLLs in same directory.
