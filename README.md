@@ -23,7 +23,8 @@ Session arguments:
 
 Optional:
 /dbg    Enable debug mode (more verbose output and logging)
-/?      Print this usage guide/b        Use batch file
+/?      Print this usage guide
+/b        Use batch file
 
 Batch file:
 /b argument cannot be used with /sp, /ip, /up, /ep, or /m.
