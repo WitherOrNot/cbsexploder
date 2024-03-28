@@ -9,7 +9,7 @@ Implementation of a CBS client for offline servicing. Capable of installing pack
 Requires servicing stack DLLs in same directory.
 
 ```
-Usage: cbsx /<mode> /m:<path> /o:<path> [/log:<path>] [/dbg] [/?] [/b:<path>]
+Usage: cbsx /<mode> /m:<path> /o:<path> [/b:<path>] [/dbg] [/?]
 
 Modes:
 /sp     Stage package
@@ -22,10 +22,9 @@ Session arguments:
 /o      Offline image Windows directory path
 
 Optional:
-/log    Set log path (default: C:\cbsexploder.log)
 /dbg    Enable debug mode (more verbose output and logging)
 /?      Print this usage guide
-/b      Use batch file
+/b        Use batch file
 
 Batch file:
 /b argument cannot be used with /sp, /ip, /up, /ep, or /m.
