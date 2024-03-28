@@ -185,7 +185,7 @@ void PrintUsage(LPCWSTR exename) {
 
 int wmain(int argc, LPCWSTR* argv)
 {
-    printf("cbsexploder 0.0.2 by witherornot\n");
+    printf("cbsexploder 0.0.3 by witherornot\n");
 
     if (ProcessOptions(argc, argv, TRUE)) {
         PrintUsage(argv[0]);
@@ -201,7 +201,8 @@ int wmain(int argc, LPCWSTR* argv)
     ASRT_NL(GetFullPathNameW(g_options.logPath, MAX_PATH, fullLogPath, NULL), "ERROR: Log path %s is invalid", g_options.logPath);
     SetEnvironmentVariableW(L"COMPONENT_BASED_SERVICING_LOGFILE", g_options.logPath);
 
-    CHK_NL_HR(CoInitialize(NULL), "ERROR: CoInitialize Failed [HR = %08x]");
+    CHK_NL_HR(CoInitializeEx(NULL, COINIT_MULTITHREADED), "ERROR: CoInitialize Failed [HR = %08x]");
+    CHK_NL_HR(CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_PKT_INTEGRITY, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, 0, NULL), "ERROR: CoInitializeSecurity Failed [HR = %08x]");
     CHK_NL_HR(CoGetMalloc(1, &g_alloc), "ERROR: CoGetMalloc Failed [HR = %08x]");
 
     if (LoadServicingStackLocal()) {

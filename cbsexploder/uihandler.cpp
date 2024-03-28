@@ -51,7 +51,7 @@ HRESULT UIHandler::EnteringStage(UINT unk1, CbsOperationStage stage, int unk2, i
 }
 
 HRESULT UIHandler::Progress(CbsInstallState state, UINT cur, UINT total, int* pUnk) {
-	ConLog("Progress: %.1f%% [Current Status: %s]", 100.0 * cur / total, PkgStateAsStr(state));
+	printf("\rProgress: %.1f%%", 100.0 * cur / total);
 	return S_OK;
 }
 
@@ -60,6 +60,6 @@ HRESULT UIHandler::ProgressEx(CbsInstallState state, UINT cur, UINT total, UINT 
 }
 
 HRESULT UIHandler::Terminate() {
-	ConLog("Operations finished, waiting for cleanup...");
+	ConLog("\nOperations finished, waiting for cleanup...");
 	return S_OK;
 }
