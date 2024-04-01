@@ -54,7 +54,7 @@ int LoadWds() {
 int ProcessOptions(int argc, LPCWSTR* argv, BOOL isCmdline) {
     for (int i = 0; i < argc; i++) {
         LPCWSTR arg = argv[i];
-        
+
         if (!wcsncmp(arg, L"/sp", 3)) {
             ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Multiple package operations specified");
             g_options.intendedPkgState = CbsInstallState::Staged;
@@ -112,10 +112,10 @@ int ProcessOptions(int argc, LPCWSTR* argv, BOOL isCmdline) {
     else {
         ASRT_NL(!g_options.enumPkgs, "ERROR: Batch file cannot be used with /ep")
 
-        if (isCmdline) {
-            ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Batch file cannot be used with /sp, /ip, or /up");
-            ASRT_NL(!g_options.pkgPath, "ERROR: Batch file cannot be used with /m option");
-        }
+            if (isCmdline) {
+                ASRT_NL(g_options.intendedPkgState == CbsInstallState::Unknown, "ERROR: Batch file cannot be used with /sp, /ip, or /up");
+                ASRT_NL(!g_options.pkgPath, "ERROR: Batch file cannot be used with /m option");
+            }
     }
 
     return 0;
@@ -197,7 +197,7 @@ int wmain(int argc, LPCWSTR* argv)
         PrintUsage(argv[0]);
         return 0;
     }
-    
+
     WCHAR fullLogPath[MAX_PATH];
     ASRT_NL(GetFullPathNameW(g_options.logPath, MAX_PATH, fullLogPath, NULL), "ERROR: Log path %s is invalid", g_options.logPath);
     SetEnvironmentVariableW(L"COMPONENT_BASED_SERVICING_LOGFILE", g_options.logPath);
@@ -233,7 +233,7 @@ int wmain(int argc, LPCWSTR* argv)
 
     CHK_HR(cbsSess->Initialize(CbsSessionOption::None, L"CbsExploder", bootDrive, winDir), "ERROR: Failed to initialize CBS Session (bootDrive = \"%s\", winDir = \"%s\") [HR = %08x]", bootDrive, winDir);
     LDBG("Initialized CBS Session (bootDrive = \"%s\", winDir = \"%s\")", bootDrive, winDir);
-    
+
     if (g_options.enumPkgs) {
         ComPtr<IEnumCbsIdentity> pkgEnum;
         CHK_HR(cbsSess->EnumeratePackages(0x50, &pkgEnum), "ERROR: Failed to enumerate packages");
@@ -259,6 +259,8 @@ int wmain(int argc, LPCWSTR* argv)
         ASRT(g_batchFile, "ERROR: Failed to open batch file %s", g_options.batchPath);
     }
 
+    const ComPtr<UIHandler> pHandler = new UIHandler();
+
     while (1) {
         if (g_batchFile) {
             int res = ProcessNextBatchArgs();
@@ -276,7 +278,7 @@ int wmain(int argc, LPCWSTR* argv)
         ComPtr<ICbsPackage> pkg;
         CHK_HR(cbsSess->CreatePackage(0, CbsPackageType::ExpandedWithMum, fullPkgPath, NULL, &pkg), "ERROR: Failed to create package (pkgPath = \"%s\") [HR = %08x]", fullPkgPath)
 
-        LPWSTR pkgIdent;
+            LPWSTR pkgIdent;
         pkg->GetProperty(CbsPackageProperty::IdentityString, &pkgIdent);
 
         LDBG("Loaded package %s", pkgIdent);
@@ -294,7 +296,6 @@ int wmain(int argc, LPCWSTR* argv)
 
         LOG("Setting package %s as %s", pkgIdent, intendStateStr);
 
-        const ComPtr<UIHandler> pHandler = new UIHandler();
         pkg->InitiateChanges(0, g_options.intendedPkgState, pHandler.Get());
 
         if (!g_batchFile) {
@@ -304,13 +305,14 @@ int wmain(int argc, LPCWSTR* argv)
             g_options.intendedPkgState = CbsInstallState::Unknown;
         }
     }
-    
+
     printf("\n");
+    pHandler->Progress(CbsInstallState::Absent, 0, 1, NULL);
 
     CbsRequiredAction reqAct;
-    CHK_HR(cbsSess->FinalizeEx(0, &reqAct), "\nERROR: Failed to finalize CBS session [HR = %08x]\nCheck log file for details.");
+    CHK_HR(cbsSess->FinalizeEx(0, &reqAct), "\n\nERROR: Failed to finalize CBS session\nCheck log file %s for details.", g_options.logPath);
 
-    LOG("\nSuccessfully finalized CBS session");
+    LOG("\n\nSuccessfully finalized CBS session");
 
     if (reqAct == CbsRequiredAction::Reboot) {
         LOG("CBS has indicated that a reboot is required");

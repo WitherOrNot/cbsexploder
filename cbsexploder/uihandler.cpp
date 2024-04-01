@@ -1,4 +1,5 @@
 #include "uihandler.h"
+#include <cwchar>
 
 ULONG UIHandler::AddRef() {
 	return InterlockedIncrement(&dwRef);
@@ -50,7 +51,11 @@ HRESULT UIHandler::EnteringStage(UINT unk1, CbsOperationStage stage, int unk2, i
 }
 
 HRESULT UIHandler::Progress(CbsInstallState state, UINT cur, UINT total, int* pUnk) {
-	printf("\rProgress: %.1f%%", 100.0 * cur / total);
+	WCHAR progress_bar[51] = { 0 };
+	wmemset(progress_bar, L' ', 50);
+	wmemset(progress_bar, L'=', 50 * cur / total);
+
+	printf("\r[%ws] %5.1f%%", progress_bar, 100.0 * cur / total);
 	return S_OK;
 }
 

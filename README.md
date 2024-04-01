@@ -37,5 +37,5 @@ Example batch file:
 ```
 
 ## Credits
- - [asdcorp](https://github.com/asdcorp) - Testing, assistance, guidance, and naming inspiration
+ - [asdcorp](https://github.com/asdcorp) - Testing, assistance, guidance, naming inspiration, progress bar implementation
  - [seven-mile](https://github.com/seven-mile) - For [CallCbsCore](https://github.com/seven-mile/CallCbsCore), which much of this code is based on
